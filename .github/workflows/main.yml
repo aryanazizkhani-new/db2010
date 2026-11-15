@@ -9,10 +9,15 @@ jobs:
     runs-on: windows-2022
 
     steps:
+      - name: Enable Git long paths
+        run: |
+          git config --global core.longpaths true
+
       - name: Checkout DB2010
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -25,14 +30,20 @@ jobs:
           git --version
           cmake --version
 
-      - name: Check project files
+      - name: Verify QEMU source
         shell: pwsh
         run: |
           Write-Host "Checking DB2010 source..."
+
           if (!(Test-Path "pyproject.toml")) {
             throw "pyproject.toml not found"
           }
+
           if (!(Test-Path "qemu/configure")) {
-            throw "QEMU submodule is missing or incomplete"
+            throw "QEMU source is missing or incomplete"
           }
-          Write-Host "Source files found."
+
+          git -C qemu rev-parse HEAD
+          git -C qemu status --short
+
+          Write-Host "QEMU source check completed."
